@@ -144,9 +144,9 @@ router.get("/vote/count", async (req, res) => {
 
     return res.status(200).json(voteRecord);
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+  console.error("Error fetching vote count:", err);
+  res.status(500).json({ error: "Internal Server Error", details: err.message });
+}
 });
 
 // Get List of all candidates with only name and party fields
