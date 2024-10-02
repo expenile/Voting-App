@@ -7,10 +7,12 @@ const Candidate = require("../models/candidate");
 const checkAdminRole = async (userID) => {
   try {
     const user = await User.findById(userID);
-    if (user.role === "admin") {
+    if (user && user.role === "admin") {
       return true;
     }
+    return false;
   } catch (err) {
+    console.error(err);
     return false;
   }
 };
@@ -19,7 +21,7 @@ const checkAdminRole = async (userID) => {
 router.post("/", jwtAuthMiddleware, async (req, res) => {
   try {
     if (!(await checkAdminRole(req.user.id)))
-      return res.status(403).json({ message: "user does not have admin role" });
+      return res.status(403).json({ message: "User does not have admin role" });
 
     const data = req.body; // Assuming the request body contains the candidate data
 
@@ -28,10 +30,17 @@ router.post("/", jwtAuthMiddleware, async (req, res) => {
 
     // Save the new user to the database
     const response = await newCandidate.save();
-    console.log("data saved");
+    console.log("Data saved");
     res.status(200).json({ response: response });
   } catch (err) {
     console.log(err);
+    if (err.name === 'ValidationError') {
+      const errors = Object.keys(err.errors).map(key => ({
+        field: key,
+        message: err.errors[key].message
+      }));
+      return res.status(400).json({ errors });
+    }
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -58,7 +67,7 @@ router.put("/:candidateID", jwtAuthMiddleware, async (req, res) => {
     }
 
     console.log("candidate data updated");
-    res.status(200).json(response);
+    res.status(200).json({message:"Candidate data updated"});
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Internal Server Error" });
@@ -67,8 +76,9 @@ router.put("/:candidateID", jwtAuthMiddleware, async (req, res) => {
 
 router.delete("/:candidateID", jwtAuthMiddleware, async (req, res) => {
   try {
-    if (!checkAdminRole(req.user.id))
-      return res.status(403).json({ message: "user does not have admin role" });
+    if (!(await checkAdminRole(req.user.id))) {
+      return res.status(403).json({ message: "User does not have admin role" });
+    }
 
     const candidateID = req.params.candidateID; // Extract the id from the URL parameter
 
@@ -78,8 +88,8 @@ router.delete("/:candidateID", jwtAuthMiddleware, async (req, res) => {
       return res.status(404).json({ error: "Candidate not found" });
     }
 
-    console.log("candidate deleted");
-    res.status(200).json(response);
+    console.log("Candidate deleted");
+    res.status(200).json({ message: "Candidate deleted" });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Internal Server Error" });
@@ -87,7 +97,7 @@ router.delete("/:candidateID", jwtAuthMiddleware, async (req, res) => {
 });
 
 // let's start voting
-router.get("/vote/:candidateID", jwtAuthMiddleware, async (req, res) => {
+router.post("/vote/:candidateID", jwtAuthMiddleware, async (req, res) => {
   // no admin can vote
   // user can only vote once
 

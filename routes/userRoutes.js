@@ -4,9 +4,9 @@ const User = require('./../models/user');
 const {jwtAuthMiddleware, generateToken} = require('./../jwt');
 
 // POST route to add a person
-router.post('/signup', async (req, res) =>{
-    try{
-        const data = req.body // Assuming the request body contains the User data
+router.post('/signup', async (req, res) => {
+    try {
+        const data = req.body; // Assuming the request body contains the User data
 
         // Check if there is already an admin user
         const adminUser = await User.findOne({ role: 'admin' });
@@ -14,7 +14,7 @@ router.post('/signup', async (req, res) =>{
             return res.status(400).json({ error: 'Admin user already exists' });
         }
 
-        // Validate Aadhar Card Number must have exactly 12 digit
+        // Validate Aadhar Card Number must have exactly 12 digits
         if (!/^\d{12}$/.test(data.aadharCardNumber)) {
             return res.status(400).json({ error: 'Aadhar Card Number must be exactly 12 digits' });
         }
@@ -30,21 +30,27 @@ router.post('/signup', async (req, res) =>{
 
         // Save the new user to the database
         const response = await newUser.save();
-        console.log('data saved');
+        console.log('Data saved');
 
         const payload = {
             id: response.id
-        }
+        };
         console.log(JSON.stringify(payload));
         const token = generateToken(payload);
 
-        res.status(200).json({response: response, token: token});
-    }
-    catch(err){
+        res.status(200).json({ response: response, token: token });
+    } catch (err) {
         console.log(err);
-        res.status(500).json({error: 'Internal Server Error'});
+        if (err.name === 'ValidationError') {
+            const errors = Object.keys(err.errors).map(key => ({
+                field: key,
+                message: err.errors[key].message
+            }));
+            return res.status(400).json({ errors });
+        }
+        res.status(500).json({ error: 'Internal Server Error' });
     }
-})
+});
 
 // Login Route
 router.post('/login', async(req, res) => {

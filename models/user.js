@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
-// Define the Person schema
+
+
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -10,6 +11,12 @@ const userSchema = new mongoose.Schema({
   age: {
     type: Number,
     required: true,
+    validate: {
+      validator: function(value) {
+        return value >= 18;
+      },
+      message: 'Age must be greater than or equal to 18'
+    }
   },
   email: {
     type: String,
@@ -24,7 +31,7 @@ const userSchema = new mongoose.Schema({
   aadharCardNumber: {
     type: Number,
     required: true,
-    unqiue: true,
+    unique: true,
   },
   password: {
     type: String,
@@ -40,6 +47,7 @@ const userSchema = new mongoose.Schema({
     default: false,
   },
 });
+
 
 userSchema.pre("save", async function (next) {
   const person = this;

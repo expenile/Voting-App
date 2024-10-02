@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
-// const bcrypt = require('bcrypt');
 
-// Define the Person schema
+// Defining the Candidate schema
 const candidateSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -14,6 +13,12 @@ const candidateSchema = new mongoose.Schema({
   age: {
     type: Number,
     required: true,
+    validate: {
+      validator: function(value) {
+        return value >= 18;
+      },
+      message: 'Age must be greater than or equal to 18'
+    }
   },
   votes: [
     {
